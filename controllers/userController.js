@@ -1,6 +1,7 @@
 import passport from "passport";
 import routes from "../routes";
 import User from "../models/User";
+import middlewares from  "../middlewares";
 
 export const getJoin = (req, res) => {
   res.render("join", { pageTitle: "Join" });
@@ -107,9 +108,12 @@ export const logout = (req, res) => {
   res.redirect(routes.home);
 };
 
-export const getMe = (req, res) => {
+export const getMe = async (req, res) => {
+  const id = req.user._id;
+  const user = await User.findById(id).populate("videos");
   console.log(req.user);
-  res.render("userDetail", { pageTitle: "User Detail" , user: req.user});
+  console.log(user);
+  res.render("userDetail", { pageTitle: "User Detail" , user});
 }
 
 export const userDetail = async (req, res) =>{
@@ -133,8 +137,10 @@ export const postEditProfile = async (req, res) => {
   } = req;
   try{
     await User.findByIdAndUpdate(req.user._id, {
-      name, email, avatarUrl: file ? file.path : req.user.avatarUrl
+      name, email, avatarUrl: file ? file.location : req.user.avatarUrl
     });
+    req.user.name = name;
+    req.user.email = email;
     res.redirect(routes.me);
   } catch(error) {
     res.redirect("editProfile")

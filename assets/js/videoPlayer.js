@@ -1,3 +1,5 @@
+import getBlobDuration from "get-blob-duration";
+
 const videoContainer = document.getElementById("jsVideoPlayer");
 let videoPlayer = document.querySelector("#jsVideoPlayer video");
 const playBtn = document.getElementById("jsPlayButton");
@@ -7,6 +9,15 @@ const currentTime = document.getElementById("currentTime");
 const totalTime = document.getElementById("totalTime");
 const vid = document.getElementById("myVideo");
 const volumeRange = document.getElementById("jsVolume");
+const videoControls = document.getElementById("controls");
+let timeout;
+
+const registerView = () => {
+    const videoId = window.location.href.split("/videos/")[1];
+    fetch(`/api/${videoId}/view`, {
+        method: "POST"
+    });
+};
 
 function handlePlayClick() {
     if(videoPlayer.paused) {
@@ -62,9 +73,10 @@ const formatDate = seconds => {
 };
   
 
-function setTotalTime() {
-    console.log("totalTime", videoPlayer.duration);
-    const totalTimeString = formatDate(videoPlayer.duration);
+async function setTotalTime() {
+    const blob = await fetch(videoPlayer.src).then(response => response.blob());
+    const duration = await getBlobDuration(blob);
+    const totalTimeString = formatDate(duration);
     totalTime.innerHTML = "&nbsp;" + totalTimeString;
 }
 
@@ -73,8 +85,11 @@ function getCurrentTime() {
 }
 
 function handleEnded() {
+    registerView();
     videoPlayer.currentTime = 0;
-    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+    videoPlayer.play();
+    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    
 }
 
 function handleDrag(event) {
@@ -90,7 +105,11 @@ function handleDrag(event) {
         volumeBtn.innerHTML = '<i class="fas fa-volume-off"></i>'; 
     }
 }
-  
+
+function showControls() {
+    videoControls.style.opacity = "1";
+}
+
 function init() {
     videoPlayer.volume = 0.5;
     playBtn.addEventListener("click", handlePlayClick);
@@ -99,11 +118,21 @@ function init() {
     setInterval(getCurrentTime, 1000);
     videoPlayer.addEventListener("ended", handleEnded);
     volumeRange.addEventListener("input", handleDrag)
+    videoContainer.addEventListener("mousemove", showControls);
+    videoPlayer.addEventListener("loadedmetadata", setTotalTime);
+    videoPlayer.addEventListener("mousemove", function() {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(mouseStop, 3000);
+    });
 }
 
-vid.onloadeddata = function() {
-    setTotalTime();
-};
+
+
+
+  
+function mouseStop() {
+    videoControls.style.opacity = "0";
+}
 
 if(videoContainer) {
     init();
