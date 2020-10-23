@@ -7,27 +7,43 @@ const increaseNumber = () => {
     commentNumber.innerHTML = parseInt(commentNumber.innerHTML, 10) + 1;
 }
 
-const addComment = comment => {
+const addComment = (comment, idFromBackend) => {
     const li = document.createElement("li");
     const span = document.createElement("span");
+    const id = document.createElement("span");
+    const deleteBtn = document.createElement("a");
+    const br = document.createElement("BR");
+    const br2 = document.createElement("BR");
     span.innerHTML = comment;
+    id.innerHTML = idFromBackend;
+    deleteBtn.innerHTML = "DELETE";
     li.appendChild(span);
+    li.appendChild(br);
+    li.appendChild(id);
+    li.appendChild(br2);
+    li.appendChild(deleteBtn);
     commentList.prepend(li);
     increaseNumber();
 }
 
 const sendComment = async comment => {
   const videoId = window.location.href.split("/videos/")[1];
-  const response = await axios({
+  await axios({
     url: `/api/${videoId}/comment`,
     method: "POST",
     data: {
       comment
     }
-  });
-  if(response.status === 200){
-    addComment(comment);
-  }
+  })
+  .then((res) => {
+    const idFromBackend = res.data.id;
+    console.log(idFromBackend);
+    if(res.status === 200){
+      addComment(comment, idFromBackend);
+    }
+  })
+  
+  
   
 };
 
